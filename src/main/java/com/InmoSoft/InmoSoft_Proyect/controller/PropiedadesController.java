@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,11 +34,8 @@ import java.util.Optional;
 @Tag(name = "Gestion de Propiedades", description = "Operaciones Crud para la administracion de las propiedades")
 public class PropiedadesController {
 
-    //Atributo
-    private PropiedadesService propiedadesService;
-    private ObjectMapper objectMapper;
-
-    //Constructor
+    private final PropiedadesService propiedadesService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public PropiedadesController(PropiedadesService propiedadesService, ObjectMapper objectMapper) {
@@ -45,17 +43,13 @@ public class PropiedadesController {
         this.objectMapper = objectMapper;
     }
 
-
-    //Metodos
-
-    //CREATE
-
-   @Operation(
+    // CREATE
+    @Operation(
             summary = "Guardar una propiedad",
             description = "Crea y guarda una nueva propiedad en la base de datos junto con sus imágenes asociadas"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Propiedad creada correctamente",
+            @ApiResponse(responseCode = "201", description = "Propiedad creada correctamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PropiedadesDTO.class))),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos",
@@ -64,136 +58,114 @@ public class PropiedadesController {
                     content = @Content),
             @ApiResponse(responseCode = "409", description = "Conflicto al crear la propiedad",
                     content = @Content),
-            @ApiResponse(responseCode = "201", description = "Se creó exitosamente la propiedad",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PropiedadesDTO.class))),
     })
-   @PostMapping(value = "/crear", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-   public ResponseEntity<?> crearPropiedad(
-           @Parameter(description = "DTO con los datos de la propiedad", required = true,
-                   content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                           schema = @Schema(implementation = PropiedadesDTO.class)))
-           @RequestPart("propiedadDto") String propiedadDto,
+    @PostMapping(value = "/crear", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> crearPropiedad(
+            @Parameter(description = "DTO con los datos de la propiedad en formato JSON", required = true)
+            @RequestPart("propiedadDto") String propiedadDto,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) throws ConflictException, JsonProcessingException {
+        PropiedadesDTO propertyDto = objectMapper.readValue(propiedadDto, PropiedadesDTO.class);
+        String result = propiedadesService.guardarPropiedad(propertyDto, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
 
-           @RequestPart(value = "files", required = false) List<MultipartFile> files
-   ) throws ConflictException, JsonProcessingException {
-
-       // Convertir JSON a DTO
-       PropiedadesDTO propertyDto = objectMapper.readValue(propiedadDto, PropiedadesDTO.class);
-       String result = propiedadesService.guardarPropiedad(propertyDto, files);
-
-       return ResponseEntity.status(HttpStatus.CREATED).body(result);
-   }
-
-    //READ
-
-    //GET ALL
-    @Operation(summary = "Obtener todos las propiedades", description = "Recupera una lista de todos las propiedades" +
-            " desde la base de datos")
+    // READ
+    @Operation(summary = "Obtener todas las propiedades", description = "Recupera una lista de todas las propiedades")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de propiedades obtenida exitosamente",
                     content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = PropiedadesEntity.class)))),
+                            array = @ArraySchema(schema = @Schema(implementation = PropiedadesFilterDTO.class)))),
             @ApiResponse(responseCode = "204", description = "No hay propiedades disponibles")
     })
-
     @GetMapping("/todas")
-
-    public List<PropiedadesFilterDTO> llamarTodasPropiedades() throws Exception {
-        return propiedadesService.llamarTodasPropiedades();
+    public ResponseEntity<List<PropiedadesFilterDTO>> llamarTodasPropiedades() throws Exception {
+        List<PropiedadesFilterDTO> propiedades = propiedadesService.llamarTodasPropiedades();
+        if (propiedades.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(propiedades);
     }
 
-    //Get for location
-    @Operation(summary = "Buscar un propiedad cercana a la localizacion", description =
-            "Busca un propiedad cercano a la localizacion actual de la propiedad")
+    @Operation(summary = "Buscar propiedades por ubicación", description = "Busca propiedades cercanas a una latitud y longitud dadas dentro de un radio")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Propiedades cercanas",
+            @ApiResponse(responseCode = "200", description = "Propiedades cercanas encontradas",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PropiedadesEntity.class))),
-            @ApiResponse(responseCode = "404", description = "Propiedades cercanas no encontradas"),
-            @ApiResponse(responseCode = "500", description = "Error interno al procesar la solicitud")
+                            array = @ArraySchema(schema = @Schema(implementation = PropiedadesCompleteDTO.class)))),
+            @ApiResponse(responseCode = "204", description = "No hay propiedades cercanas")
     })
-
     @GetMapping("/cercanas")
-    public List<PropiedadesCompleteDTO> llamarPropiedadCercanaPor(@RequestParam double lat, @RequestParam double lon, @RequestParam(defaultValue = "5000") double radius) {
-        return propiedadesService.llamarPropiedadCercanaPor(lat, lon, radius);
+    public ResponseEntity<List<PropiedadesCompleteDTO>> llamarPropiedadCercanaPor(
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(defaultValue = "5000") double radius
+    ) {
+        List<PropiedadesCompleteDTO> propiedades = propiedadesService.llamarPropiedadCercanaPor(lat, lon, radius);
+        if (propiedades.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(propiedades);
     }
 
-    //GET UNIQUE GET BY ID
-    @Operation(summary = "Buscar una propiedad por id", description = "Busca un propiedad por id en la base de datos")
+    @Operation(summary = "Buscar una propiedad por ID", description = "Busca una propiedad en la base de datos por su ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Propiedad encontrado exitosamente",
+            @ApiResponse(responseCode = "200", description = "Propiedad encontrada exitosamente",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PropiedadesEntity.class))),
-            @ApiResponse(responseCode = "404", description = "Propiedad no encontrado"),
-            @ApiResponse(responseCode = "500", description = "Error interno al procesar la solicitud")
+                            schema = @Schema(implementation = PropiedadesCompleteDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Propiedad no encontrada")
     })
-
     @GetMapping("/{idPropiedad}")
-    public ResponseEntity<?> llamarPropiedadPorId(@PathVariable Long idPropiedad) {
+    public ResponseEntity<PropiedadesCompleteDTO> llamarPropiedadPorId(@PathVariable Long idPropiedad) {
         try {
             Optional<PropiedadesCompleteDTO> propiedad = propiedadesService.llamarPropiedadPorId(idPropiedad);
-            if (propiedad.isPresent()) {
-                return ResponseEntity.status(HttpStatus.OK).body(propiedad.get());
-            } else {
-                return ResponseEntity.status(404).body("Propiedad no encontrado");
-            }
+            return propiedad.map(p -> ResponseEntity.ok().body(p))
+                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error interno al procesar la solicitud");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
         }
     }
 
-    //UPDATE
-
-    //PUT
-
-    @Operation(summary = "Actualizar una propiedad", description =
-            "Actualiza y guarda una propiedad en la base de datos")
+    // UPDATE
+    @Operation(summary = "Actualizar una propiedad", description = "Actualiza y guarda una propiedad existente en la base de datos, incluyendo la posibilidad de reemplazar imágenes")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Se actualizo correctamente la propiedad",
+            @ApiResponse(responseCode = "200", description = "Propiedad actualizada correctamente",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PropiedadesDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Propiedad no encontrado"),
+                            schema = @Schema(implementation = PropiedadesEntity.class))),
+            @ApiResponse(responseCode = "404", description = "Propiedad no encontrada"),
             @ApiResponse(responseCode = "500", description = "Error interno al actualizar la propiedad")
     })
-
     @PutMapping(value = "/actualizar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> actualizarPropiedad(
-            @RequestPart("propiedadDto") String propiedadDtoJson,
+    public ResponseEntity<Object> actualizarPropiedad(
+            @RequestPart("propiedadDto") String propiedadDto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
-    ) {
+    ) throws JsonProcessingException {
+
         try {
-            // Convertir JSON a DTO (igual que en el POST)
-            PropiedadesDTO propiedadDto = objectMapper.readValue(propiedadDtoJson, PropiedadesDTO.class);
-
-            PropiedadesEntity propiedadActualizada = propiedadesService.actualizarPropiedad(propiedadDto, files,null);
+            PropiedadesDTO propiedadUpdateDto = objectMapper.readValue(propiedadDto, PropiedadesDTO.class);
+            PropiedadesEntity propiedadActualizada = propiedadesService.actualizarPropiedad(propiedadUpdateDto, files);
             return ResponseEntity.ok(propiedadActualizada);
-
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error interno al actualizar la propiedad: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno al actualizar la propiedad: " + e.getMessage());
         }
     }
 
-    //DELETE
-    @Operation(summary = "Eliminar una propiedad", description = "Elimina una propiedad en la base de datos")
+    // DELETE
+    @Operation(summary = "Eliminar una propiedad", description = "Elimina una propiedad de la base de datos por su ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Propiedad eliminada Correctamente.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PropiedadesEntity.class))),
-            @ApiResponse(responseCode = "404", description = "Propiedad no encontrado"),
+            @ApiResponse(responseCode = "200", description = "Propiedad eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Propiedad no encontrada")
     })
-
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/eliminar/{idPropiedad}")
     public ResponseEntity<String> deleteEvent(@PathVariable Long idPropiedad) {
         try {
             propiedadesService.eliminarPropiedadPorId(idPropiedad);
-
-            return ResponseEntity.ok("Propiedad eliminada Correctamente.");
+            return ResponseEntity.ok("Propiedad eliminada correctamente.");
         } catch (RuntimeException | IOException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 }

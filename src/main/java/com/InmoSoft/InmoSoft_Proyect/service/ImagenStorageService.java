@@ -36,11 +36,9 @@ public class ImagenStorageService {
 
     public void uploadImages(List<MultipartFile> files, String keyPrefix) throws IOException {
         for (MultipartFile file : files) {
-            String fileKey = keyPrefix + "/" + file.getOriginalFilename();
-
             PutObjectRequest putRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(fileKey)
+                    .key(keyPrefix)
                     .contentType(file.getContentType())
                     .build();
 
@@ -48,31 +46,14 @@ public class ImagenStorageService {
         }
     }
 
-    public String uploadImage(MultipartFile file) {
-        try {
-            // Validar que el archivo no esté vacío
-            if (file.isEmpty()) {
-                throw new IllegalArgumentException("El archivo está vacío");
-            }
+    public void uploadImage(MultipartFile file, String key) throws IOException {
+        PutObjectRequest putRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .contentType(file.getContentType())
+                .build();
 
-            // Generar un nombre único para la imagen
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-
-            // 🔹 Ejemplo: guardar en el sistema de archivos local
-            Path path = Paths.get("uploads/" + fileName);
-            Files.createDirectories(path.getParent());
-            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-
-            // Retornar URL (puedes ajustar según tu storage)
-            return "/uploads/" + fileName;
-
-            // 🔹 Si usas S3:
-            // amazonS3.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), new ObjectMetadata()));
-            // return amazonS3.getUrl(bucketName, fileName).toString();
-
-        } catch (IOException e) {
-            throw new RuntimeException("Error al subir la imagen: " + e.getMessage(), e);
-        }
+        s3Client.putObject(putRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
     }
 
     public String generatePresignedUrl(String key, Duration duration) {

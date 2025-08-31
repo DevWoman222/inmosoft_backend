@@ -39,7 +39,7 @@ public class PropiedadesEntity {
 
     private int habitaciones;
 
-    private int baños;
+    private int banos;
 
     private boolean parqueadero;
 
@@ -99,7 +99,7 @@ public class PropiedadesEntity {
 
     //Constructor
 
-    public PropiedadesEntity(Long idPropiedad, int precio, String ciudad, String sector, String codigo, String tipoInmueble, String estado, int habitaciones, int baños, boolean parqueadero, boolean cuartoUtil, boolean piscina, boolean vigilancia, boolean balcon, boolean jacuzzi, boolean ascensor, boolean condicion, String descripcion, Point coordenadas, Double latitude, Double longitude, boolean disponibilidad, int areaMetros, PropietariosEntity propietario, TemporalidadesEntity temporalidades) {
+    public PropiedadesEntity(Long idPropiedad, int precio, String ciudad, String sector, String codigo, String tipoInmueble, String estado, int habitaciones, int banos, boolean parqueadero, boolean cuartoUtil, boolean piscina, boolean vigilancia, boolean balcon, boolean jacuzzi, boolean ascensor, boolean condicion, String descripcion, Point coordenadas, Double latitude, Double longitude, boolean disponibilidad, int areaMetros, PropietariosEntity propietario, TemporalidadesEntity temporalidades) {
         this.idPropiedad = idPropiedad;
         this.precio = precio;
         this.ciudad = ciudad;
@@ -108,7 +108,7 @@ public class PropiedadesEntity {
         this.tipoInmueble = tipoInmueble;
         this.estado = estado;
         this.habitaciones = habitaciones;
-        this.baños = baños;
+        this.banos = banos;
         this.parqueadero = parqueadero;
         this.cuartoUtil = cuartoUtil;
         this.piscina = piscina;
@@ -204,12 +204,12 @@ public class PropiedadesEntity {
         this.habitaciones = habitaciones;
     }
 
-    public int getBaños() {
-        return baños;
+    public int getBanos() {
+        return banos;
     }
 
-    public void setBaños(int baños) {
-        this.baños = baños;
+    public void setBanos(int banos) {
+        this.banos = banos;
     }
 
     public boolean isParqueadero() {

@@ -49,6 +49,23 @@ public class ImagenService {
         return imagenesGuardadas;
     }
 
+    public Imagen uploadImage(MultipartFile file, PropiedadesEntity propiedad) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IOException("Archivo de imagen vacío o nulo");
+        }
+
+        String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+        String key = "imagenes/" + fileName;
+
+        imagenStorageService.uploadImage(file, key);
+
+        Imagen imagen = new Imagen();
+        imagen.setNombreOriginal(file.getOriginalFilename());
+        imagen.setKeyS3(key);
+        imagen.setPropiedad(propiedad);
+        return imagenRepository.save(imagen);
+    }
+
     // Obtener la primera imagen con URL firmada
     public Imagen getFirstImage(Long idPropiedad) {
         List<Imagen> imagenes = imagenRepository.findAllImagenByPropiedadIdPropiedad(idPropiedad);
@@ -122,17 +139,15 @@ public class ImagenService {
                     .orElseThrow(() -> new IOException("Propiedad no encontrada"));
 
             for (MultipartFile file : nuevasImagenes) {
-                // Subir archivo y devolver URL o key
-                String url = imagenStorageService.uploadImage(file);
-
-                Imagen imagen = new Imagen();
-                imagen.setPropiedad(propiedad);
+                // Subir archivo y devolver la URL o clave
+                Imagen imagen = uploadImage(file, propiedad);
 
                 nuevas.add(imagenRepository.save(imagen));
             }
         }
 
         return nuevas;
+
     }
 
 

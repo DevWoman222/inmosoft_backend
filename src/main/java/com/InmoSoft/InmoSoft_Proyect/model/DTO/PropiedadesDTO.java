@@ -23,7 +23,7 @@ public class PropiedadesDTO {
 
     private int habitaciones;
 
-    private int baños;
+    private int banos;
 
     private boolean parqueadero;
 
@@ -37,7 +37,7 @@ public class PropiedadesDTO {
 
     private boolean jacuzzi;
 
-    private boolean asensor;
+    private boolean ascensor;
 
     private boolean condicion;
 
@@ -128,12 +128,12 @@ public class PropiedadesDTO {
         this.habitaciones = habitaciones;
     }
 
-    public int getBaños() {
-        return baños;
+    public int getBanos() {
+        return banos;
     }
 
-    public void setBaños(int baños) {
-        this.baños = baños;
+    public void setBanos(int banos) {
+        this.banos = banos;
     }
 
     public boolean isParqueadero() {
@@ -184,12 +184,12 @@ public class PropiedadesDTO {
         this.jacuzzi = jacuzzi;
     }
 
-    public boolean isAsensor() {
-        return asensor;
+    public boolean isAscensor() {
+        return ascensor;
     }
 
-    public void setAsensor(boolean asensor) {
-        this.asensor = asensor;
+    public void setAscensor(boolean ascensor) {
+        this.ascensor = ascensor;
     }
 
     public boolean isCondicion() {

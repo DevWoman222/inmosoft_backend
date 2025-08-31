@@ -2,7 +2,6 @@ package com.InmoSoft.InmoSoft_Proyect.model;
 
 import jakarta.persistence.*;
 
-import java.sql.Timestamp;
 import java.time.LocalTime;
 import java.util.Date;
 
@@ -30,6 +29,21 @@ public class CitasEntity {
 
     @Column(name = "estado")
     private String estado; // "agendada", "cancelada"
+
+
+    //Constructor
+
+    public CitasEntity(Long idCitas, Long idUsuario, Long idPropiedad, Date fecha, LocalTime hora, String estado) {
+        this.idCitas = idCitas;
+        this.idUsuario = idUsuario;
+        this.idPropiedad = idPropiedad;
+        this.fecha = fecha;
+        this.hora = hora;
+        this.estado = estado;
+    }
+
+    public CitasEntity() {
+    }
 
     // Getters y Setters
 
@@ -81,6 +95,4 @@ public class CitasEntity {
         this.estado = estado;
     }
 
-
-    // ...
 }

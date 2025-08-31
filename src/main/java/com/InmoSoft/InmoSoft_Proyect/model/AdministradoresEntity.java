@@ -1,6 +1,7 @@
 package com.InmoSoft.InmoSoft_Proyect.model;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -33,13 +34,14 @@ public class AdministradoresEntity {
     @Column(name = "nombre_comercial", nullable = false)
     private String nombreComercial;
 
-    @Column(name = "nombre_representante", nullable = true)
+    @Column(name = "nombre_representante")
     private String nombreRepresentante;
 
     @Column(nullable = false)
     private boolean estado;
 
-    @Column(name = "fecha_registro", nullable = false)
+    @CreatedDate
+    @Column(name = "fecha_registro", nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
 
     @Column(name = "rol", nullable = false)

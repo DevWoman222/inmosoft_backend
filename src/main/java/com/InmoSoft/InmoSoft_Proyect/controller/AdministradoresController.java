@@ -52,7 +52,7 @@ public class AdministradoresController {
     @Operation(summary = "Actualizar administrador", description = "Modifica los datos de un administrador existente")
     @ApiResponse(responseCode = "200", description = "Administrador actualizado correctamente",
             content = @Content(schema = @Schema(implementation = AdministradoresEntity.class)))
-    @PutMapping("/actualizar")
+    @PutMapping("/{id}/actualizar")
     public ResponseEntity<AdministradoresEntity> actualizarAdministrador(
             @PathVariable Long id,
             @RequestBody AdministradoresEntity admin) {

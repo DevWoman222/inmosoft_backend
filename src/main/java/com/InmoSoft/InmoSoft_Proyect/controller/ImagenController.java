@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/imagen")
@@ -54,19 +55,33 @@ public class ImagenController {
     }
 
 
-    /*@PutMapping("/update")
-    public ResponseEntity<?> update(@RequestBody List<Imagen> imagenes, @RequestParam("file") List<MultipartFile> files) {
+    @PutMapping("/update")
+    public ResponseEntity<?> update(@RequestBody List<Imagen> imagen, @RequestParam("file") List<MultipartFile> files) {
         try {
+            // Asegúrate de que la lista de imágenes no esté vacía
+            if (imagen.isEmpty()) {
+                return ResponseEntity.badRequest().body("La lista de imágenes no puede estar vacía.");
+            }
 
-            imagenService.updateImages(imagenes, files);
+            // Obtener el ID de la propiedad de la primera imagen
+            Long idPropiedad = imagen.get(0).getPropiedad().getIdPropiedad();
+
+            // Extraer los IDs de las imágenes a eliminar
+            List<Long> idsAEliminar = imagen.stream()
+                    .map(Imagen::getIdImagen)
+                    .collect(Collectors.toList());
+
+            // Ahora llama al método del servicio con los parámetros correctos
+            imagenService.updateImages(idPropiedad, files, idsAEliminar);
 
             return ResponseEntity.ok(Map.of(
-                    "Mesaje", "Imagen actualizada correctamente"
+                    "Mensaje", "Imágenes actualizadas correctamente"
             ));
         } catch (Exception e) {
+            // Asumiendo que handleException es un método que maneja errores
             return handleException(e);
         }
-    }*/
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {

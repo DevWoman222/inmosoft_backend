@@ -53,7 +53,8 @@ public class UsuariosController {
     @Operation(summary = "Actualizar usuario", description = "Actualiza la información de un usuario existente")
     @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente",
             content = @Content(schema = @Schema(implementation = UsuariosEntity.class)))
-    @PutMapping("/actualizar")
+    @PutMapping("/actualizar/{id}")
+
     public ResponseEntity<UsuariosEntity> actualizarUsuario(
             @PathVariable Long id,
             @RequestBody UsuariosEntity usuario) {

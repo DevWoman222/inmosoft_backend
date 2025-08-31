@@ -13,18 +13,34 @@ import java.util.Optional;
 @Service
 public class AdministradoresService {
 
-    @Autowired
     private AdministradoresRepository administradoresRepository;
 
-    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    public AdministradoresService(AdministradoresRepository administradoresRepository, PasswordEncoder passwordEncoder) {
+        this.administradoresRepository = administradoresRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     // Crear administrador
     public AdministradoresEntity crearAdministrador(AdministradoresEntity admin) {
-        admin.setContraseña(passwordEncoder.encode(admin.getContraseña()));
-        admin.setEstado(true);
-        admin.setFechaRegistro(LocalDateTime.now());
-        return administradoresRepository.save(admin);
+
+        AdministradoresEntity newAdmin = new AdministradoresEntity();
+
+        newAdmin.setEmail(admin.getEmail());
+        newAdmin.setContraseña(passwordEncoder.encode(admin.getContraseña()));
+        newAdmin.setTelefono(admin.getTelefono());
+        newAdmin.setNit(admin.getNit());
+        newAdmin.setDireccion(admin.getDireccion());
+        newAdmin.setEstado(true);
+        newAdmin.setNombreComercial(admin.getNombreComercial());
+        newAdmin.setNombreRepresentante(admin.getNombreRepresentante());
+        newAdmin.setFechaRegistro(LocalDateTime.now());
+        newAdmin.setRol("ADMIN");
+
+
+        return administradoresRepository.save(newAdmin);
     }
 
     // Listar administradores
@@ -38,24 +54,31 @@ public class AdministradoresService {
     }
 
     // Actualizar administrador
-    public AdministradoresEntity actualizarAdministrador(Long id, AdministradoresEntity adminActualizado) {
-        return administradoresRepository.findById(id).map(admin -> {
-            admin.setEmail(adminActualizado.getEmail());
-            admin.setTelefono(adminActualizado.getTelefono());
-            admin.setNit(adminActualizado.getNit());
-            admin.setDireccion(adminActualizado.getDireccion());
-            admin.setNombreComercial(adminActualizado.getNombreComercial());
-            admin.setNombreRepresentante(adminActualizado.getNombreRepresentante());
-            admin.setRol(adminActualizado.getRol());
-            admin.setEstado(adminActualizado.isEstado());
+    public AdministradoresEntity actualizarAdministrador(Long id, AdministradoresEntity admin) {
 
-            if (adminActualizado.getContraseña() != null && !adminActualizado.getContraseña().isEmpty()) {
-                admin.setContraseña(passwordEncoder.encode(adminActualizado.getContraseña()));
-            }
+        AdministradoresEntity existingAdmin = administradoresRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado con id: " + id));
 
-            return administradoresRepository.save(admin);
-        }).orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+        // Actualizamos solo los campos que se pueden modificar
+        existingAdmin.setEmail(admin.getEmail());
+        existingAdmin.setTelefono(admin.getTelefono());
+        existingAdmin.setNit(admin.getNit());
+        existingAdmin.setDireccion(admin.getDireccion());
+        existingAdmin.setNombreComercial(admin.getNombreComercial());
+        existingAdmin.setNombreRepresentante(admin.getNombreRepresentante());
+        existingAdmin.setEstado(true);
+
+        // Si llega una nueva contraseña, la encriptamos
+        if (admin.getContraseña() != null && !admin.getContraseña().isEmpty()) {
+            existingAdmin.setContraseña(passwordEncoder.encode(admin.getContraseña()));
+        }
+
+        // Fecha de registro normalmente no se toca, pero puedes actualizar si lo requieres
+        // existingAdmin.setFechaRegistro(LocalDateTime.now());
+
+        return administradoresRepository.save(existingAdmin);
     }
+
 
     // Desactivar administrador
     public void desactivarAdministrador(Long id) {

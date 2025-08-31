@@ -43,7 +43,7 @@ public class PropietarioController {
     }
 
     // PUT actualizar
-    @PutMapping("/actualizar")
+    @PutMapping("/{id}/actualizar")
     public ResponseEntity<String> actualizar(@PathVariable Long id, @RequestBody PropietariosEntity propietario) {
         try {
             propietario.setIdPropietario(id);

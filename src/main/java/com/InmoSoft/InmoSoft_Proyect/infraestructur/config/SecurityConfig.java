@@ -57,7 +57,22 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    //Todos los enpoints liberados sin autenticacion
+    /*
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/**").permitAll() // TODAS las rutas son públicas
+                );
+        return http.build();
+    }*/
+
+
+
     // enpoints de funciones que se permiten para todos
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
@@ -65,8 +80,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorization -> authorization
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ⬅️ Permitir preflight CORS
                         .requestMatchers("/api/login").permitAll()
+                        .requestMatchers("/api/usuarios/registro").permitAll()
+                        .requestMatchers("/api/usuarios/actualizar").permitAll()
+                        .requestMatchers("/api/administradores/registro").permitAll()
                         .requestMatchers("/api/propietarios/guardar").permitAll()
+                        .requestMatchers("/api/propiedades/crear").permitAll()
                         .requestMatchers("/api/propiedades/todas").permitAll()
+                        .requestMatchers("/api/propiedades/actualizar").permitAll()
 
                         .requestMatchers(
                                 "/v3/api-docs/**",

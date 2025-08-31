@@ -9,6 +9,7 @@ import com.InmoSoft.InmoSoft_Proyect.model.TemporalidadesEntity;
 import com.InmoSoft.InmoSoft_Proyect.model.DTO.PropiedadesCompleteDTO;
 import com.InmoSoft.InmoSoft_Proyect.model.DTO.PropiedadesDTO;
 import com.InmoSoft.InmoSoft_Proyect.model.DTO.PropiedadesFilterDTO;
+import com.InmoSoft.InmoSoft_Proyect.repository.ImagenRepository;
 import com.InmoSoft.InmoSoft_Proyect.repository.PropiedadesRepository;
 import com.InmoSoft.InmoSoft_Proyect.repository.PropietariosRepository;
 import com.InmoSoft.InmoSoft_Proyect.repository.TemporalidadesRepository;
@@ -41,7 +42,7 @@ public class PropiedadesService {
 
     private PropiedadesRepository propiedadesRepository;
 
-    //Location
+    private ImagenRepository imagenRepository;
 
     private final GeometryFactory geometryFactory;
 
@@ -55,15 +56,17 @@ public class PropiedadesService {
     // Constructor
 
     @Autowired
-    public PropiedadesService(ImagenService imagenService, GeometryFactory geometryFactory, PropietarioService propietarioService, PropietariosRepository propietariosRepository, PropiedadesRepository propiedadesRepository, TemporalidadesService temporalidadesService, TemporalidadesRepository temporalidadesRepository) {
-        this.geometryFactory = geometryFactory;
+    public PropiedadesService(PropietarioService propietarioService, PropietariosRepository propietariosRepository, PropiedadesRepository propiedadesRepository, ImagenRepository imagenRepository, GeometryFactory geometryFactory, ImagenService imagenService, TemporalidadesService temporalidadesService, TemporalidadesRepository temporalidadesRepository) {
+        this.propietarioService = propietarioService;
         this.propietariosRepository = propietariosRepository;
         this.propiedadesRepository = propiedadesRepository;
-        this.propietarioService = propietarioService;
+        this.imagenRepository = imagenRepository;
+        this.geometryFactory = geometryFactory;
         this.imagenService = imagenService;
         this.temporalidadesService = temporalidadesService;
         this.temporalidadesRepository = temporalidadesRepository;
     }
+
 
     // Metodos
 
@@ -83,9 +86,10 @@ public class PropiedadesService {
 
             // 2️ Crear nueva propiedad
             PropiedadesEntity nuevaPropiedad = new PropiedadesEntity();
+
             nuevaPropiedad.setCoordenadas(location);
             nuevaPropiedad.setPrecio(propiedadDto.getPrecio());
-            nuevaPropiedad.setBaños(propiedadDto.getBaños());
+            nuevaPropiedad.setBanos(propiedadDto.getBanos());
             nuevaPropiedad.setCiudad(propiedadDto.getCiudad());
             nuevaPropiedad.setSector(propiedadDto.getSector());
             nuevaPropiedad.setCodigo(generarCodigoAleatorio());
@@ -98,7 +102,7 @@ public class PropiedadesService {
             nuevaPropiedad.setVigilancia(propiedadDto.isVigilancia());
             nuevaPropiedad.setBalcon(propiedadDto.isBalcon());
             nuevaPropiedad.setJacuzzi(propiedadDto.isJacuzzi());
-            nuevaPropiedad.setAscensor(propiedadDto.isAsensor());
+            nuevaPropiedad.setAscensor(propiedadDto.isAscensor());
             nuevaPropiedad.setCondicion(propiedadDto.isCondicion());
             nuevaPropiedad.setDescripcion(propiedadDto.getDescripcion());
             nuevaPropiedad.setDisponibilidad(propiedadDto.isDisponibilidad());
@@ -194,14 +198,14 @@ public class PropiedadesService {
     // UPDATE
 
     @Transactional
-    public PropiedadesEntity actualizarPropiedad(PropiedadesDTO editarPropiedadDto, List<MultipartFile> nuevasImagenes, List<Long> idsAEliminar) throws NotFoundException {
+    public PropiedadesEntity actualizarPropiedad(PropiedadesDTO editarPropiedadDto, List<MultipartFile> files) throws NotFoundException {
         try {
             PropiedadesEntity propiedad = propiedadesRepository.findById(editarPropiedadDto.getIdPropiedad())
                     .orElseThrow(() -> new NotFoundException("Propiedad no encontrada con id " + editarPropiedadDto.getIdPropiedad()));
 
             // Actualiza campos
             propiedad.setPrecio(editarPropiedadDto.getPrecio());
-            propiedad.setBaños(editarPropiedadDto.getBaños());
+            propiedad.setBanos(editarPropiedadDto.getBanos());
             propiedad.setCiudad(editarPropiedadDto.getCiudad());
             propiedad.setSector(editarPropiedadDto.getSector());
             propiedad.setTipoInmueble(editarPropiedadDto.getTipoInmueble());
@@ -213,7 +217,7 @@ public class PropiedadesService {
             propiedad.setVigilancia(editarPropiedadDto.isVigilancia());
             propiedad.setBalcon(editarPropiedadDto.isBalcon());
             propiedad.setJacuzzi(editarPropiedadDto.isJacuzzi());
-            propiedad.setAscensor(editarPropiedadDto.isAsensor());
+            propiedad.setAscensor(editarPropiedadDto.isAscensor());
             propiedad.setCondicion(editarPropiedadDto.isCondicion());
             propiedad.setDescripcion(editarPropiedadDto.getDescripcion());
             propiedad.setDisponibilidad(editarPropiedadDto.isDisponibilidad());
@@ -235,7 +239,7 @@ public class PropiedadesService {
 
                 if (!existTempo) {
                     new NotFoundException("Temporalidad no encontrada");
-                }else {
+                } else {
                     TemporalidadesEntity newTempo = temporalidadesService.update(editarPropiedadDto.getTemporalidades());
 
                     propiedad.setTemporalidades(newTempo);
@@ -256,25 +260,37 @@ public class PropiedadesService {
 
             PropiedadesEntity propiedadActualizada = propiedadesRepository.save(propiedad);
 
-            // Si se enviaron nuevos archivos, los sube y reemplaza los anteriores
-            if (nuevasImagenes != null && !nuevasImagenes.isEmpty()) {
-                imagenService.updateImages(
-                        editarPropiedadDto.getIdPropiedad(),
-                        nuevasImagenes,
-                        idsAEliminar // puede venir null si no eliminas nada
-                );
+            // Si llegan archivos nuevos
+            if (files != null && !files.isEmpty()) {
+                List<Imagen> nuevasImagenes = new ArrayList<>();
+
+                // Si hay imágenes actuales, actualízalas
+                List<Imagen> imagenesActuales = imagenRepository.findAllImagenByPropiedadIdPropiedad(propiedad.getIdPropiedad());
+
+                List<Long> ids = new ArrayList<>();
+
+                for (Imagen imagenActual : imagenesActuales) {
+                    Long id = imagenActual.getIdImagen();
+                    ids.add(id);
+                }
+
+                // Reutiliza y actualiza las existentes si hay suficientes
+
+                List<Imagen> actualizadas = imagenService.updateImages(propiedad.getIdPropiedad(), files, ids);
+
+                for (Imagen actualizada : actualizadas) {
+                    nuevasImagenes.add(actualizada);
+                }
+
             }
-
             return propiedadActualizada;
-
-        } catch (NotFoundException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException("Error al actualizar la propiedad: " + e.getMessage(), e);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
+
 
     // DELETE
 
@@ -307,7 +323,7 @@ public class PropiedadesService {
         dto.setTipoInmueble(propiedadesEntity.getTipoInmueble());
         dto.setEstado(propiedadesEntity.getEstado());
         dto.setHabitaciones(propiedadesEntity.getHabitaciones());
-        dto.setBaños(propiedadesEntity.getBaños());
+        dto.setBaños(propiedadesEntity.getBanos());
         dto.setParqueadero(propiedadesEntity.isParqueadero());
         dto.setCuartoUtil(propiedadesEntity.isCuartoUtil());
         dto.setPiscina(propiedadesEntity.isPiscina());
@@ -323,7 +339,6 @@ public class PropiedadesService {
         dto.setAreaMetros(propiedadesEntity.getAreaMetros());
         dto.setTemporalidades(propiedadesEntity.getTemporalidades());
         dto.setIdPropietario(propiedadesEntity.getPropietario().getIdPropietario());
-
         dto.setImages(imagenes);
 
         return dto;

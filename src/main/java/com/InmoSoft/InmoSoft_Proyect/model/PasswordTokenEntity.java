@@ -3,7 +3,7 @@ package com.InmoSoft.InmoSoft_Proyect.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+
 
 @Entity
 @Table(name = "password_tokens")

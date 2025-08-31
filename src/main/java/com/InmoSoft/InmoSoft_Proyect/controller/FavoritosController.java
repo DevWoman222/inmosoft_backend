@@ -35,7 +35,7 @@ public class FavoritosController {
     }
 
     @Operation(summary = "Eliminar una propiedad de favoritos")
-    @DeleteMapping("/{idUsuario}/{idPropiedad}")
+    @DeleteMapping("/{idUsuario}/{idPropiedad}/delete")
     public ResponseEntity<Void> eliminarDeFavoritos(
             @PathVariable Long idUsuario,
             @PathVariable Long idPropiedad) {

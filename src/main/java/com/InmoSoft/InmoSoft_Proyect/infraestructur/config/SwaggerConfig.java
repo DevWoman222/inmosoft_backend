@@ -13,8 +13,8 @@ public class SwaggerConfig {
     public OpenAPI api() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Documentación API Gestora de propiedades")
-                        .description("API RESTful para el backend del sistema gestor de propiedades")
+                        .title("Documentación API InmoSoft")
+                        .description("API RESTful para el backend de la inmobiliaria")
                         .version("1.0.0"))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new io.swagger.v3.oas.models.Components()

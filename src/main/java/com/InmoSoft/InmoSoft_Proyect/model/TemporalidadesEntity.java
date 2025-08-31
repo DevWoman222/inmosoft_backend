@@ -2,8 +2,6 @@ package com.InmoSoft.InmoSoft_Proyect.model;
 
 import jakarta.persistence.*;
 
-import java.util.List;
-
 @Entity
 @Table(name = "temporalidades")
 public class TemporalidadesEntity {
@@ -34,6 +32,7 @@ public class TemporalidadesEntity {
 
     //getter and setter
 
+
     public Long getIdTemporalidad() {
         return idTemporalidad;
     }
@@ -41,8 +40,6 @@ public class TemporalidadesEntity {
     public void setIdTemporalidad(Long idTemporalidad) {
         this.idTemporalidad = idTemporalidad;
     }
-
-
 
     public int getDisponibilidad() {
         return disponibilidad;

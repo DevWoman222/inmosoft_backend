@@ -19,10 +19,22 @@ public class UsuariosService {
     private PasswordEncoder passwordEncoder; // Para encriptar la contraseña
 
     // Crear usuario (registro)
+
     public UsuariosEntity crearUsuario(UsuariosEntity usuario) {
-        usuario.setContraseña(passwordEncoder.encode(usuario.getContraseña())); // Encripta contraseña
-        usuario.setEstado(true); // Por defecto activo
-        return usuariosRepository.save(usuario);
+
+        UsuariosEntity newUser = new UsuariosEntity();
+
+        newUser.setPrimerNombre(usuario.getPrimerNombre());
+        newUser.setSegundoNombre(usuario.getSegundoNombre());
+        newUser.setPrimerApellido(usuario.getPrimerApellido());
+        newUser.setSegundoApellido(usuario.getSegundoApellido());
+        newUser.setEmail(usuario.getEmail());
+        newUser.setCedula(usuario.getCedula());
+        newUser.setTelefono(usuario.getTelefono());
+        newUser.setContraseña(passwordEncoder.encode(usuario.getContraseña())); // Encripta contraseña
+        newUser.setEstado(true); // Por defecto activo
+
+        return usuariosRepository.save(newUser);
     }
 
     // Obtener todos
@@ -35,27 +47,30 @@ public class UsuariosService {
         return usuariosRepository.findById(id);
     }
 
-    // Actualizar
-    public UsuariosEntity actualizarUsuario(Long id, UsuariosEntity usuarioActualizado) {
-        return usuariosRepository.findById(id).map(usuario -> {
-            usuario.setPrimerNombre(usuarioActualizado.getPrimerNombre());
-            usuario.setSegundoNombre(usuarioActualizado.getSegundoNombre());
-            usuario.setPrimerApellido(usuarioActualizado.getPrimerApellido());
-            usuario.setSegundoApellido(usuarioActualizado.getSegundoApellido());
-            usuario.setEmail(usuarioActualizado.getEmail());
-            usuario.setCedula(usuarioActualizado.getCedula());
-            usuario.setTelefono(usuarioActualizado.getTelefono());
-            usuario.setRol(usuarioActualizado.getRol());
-            usuario.setEstado(usuarioActualizado.isEstado());
 
-            // Solo actualiza contraseña si no viene vacía
-            if (usuarioActualizado.getContraseña() != null && !usuarioActualizado.getContraseña().isEmpty()) {
-                usuario.setContraseña(passwordEncoder.encode(usuarioActualizado.getContraseña()));
-            }
+    // Update USER
+    public UsuariosEntity actualizarUsuario(Long id, UsuariosEntity usuario) {
 
-            return usuariosRepository.save(usuario);
-        }).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        UsuariosEntity existingUser = usuariosRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+
+        existingUser.setPrimerNombre(usuario.getPrimerNombre());
+        existingUser.setSegundoNombre(usuario.getSegundoNombre());
+        existingUser.setPrimerApellido(usuario.getPrimerApellido());
+        existingUser.setSegundoApellido(usuario.getSegundoApellido());
+        existingUser.setEmail(usuario.getEmail());
+        existingUser.setCedula(usuario.getCedula());
+        existingUser.setTelefono(usuario.getTelefono());
+        existingUser.setEstado(true);
+
+        // Si se manda nueva contraseña, la encriptamos
+        if (usuario.getContraseña() != null && !usuario.getContraseña().isEmpty()) {
+            existingUser.setContraseña(passwordEncoder.encode(usuario.getContraseña()));
+        }
+
+        return usuariosRepository.save(existingUser);
     }
+
 
     // Eliminar (cambiar estado a false en lugar de borrar físico)
     public void desactivarUsuario(Long id) {
